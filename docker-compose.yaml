@@ -1,0 +1,103 @@
+services:
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: client
+    ports:
+      - "8000:80"
+    volumes:
+      - ./client:/app
+    depends_on:
+      server:
+        condition: service_started
+        restart: true
+    networks:
+      - server_postgres_client
+
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: server
+    ports:
+      - "5000:5000"
+#    working_dir: /server
+    volumes:
+      - ./server:/server  # Mount the messenger directory for live updates
+      - ./logs/twitter_application:/var/log/twitter_application # Mount the logging directory
+      - ./client/static/media:/media # Mount the media directory to save file into client service
+      - ./client/static/${MEDIA_DIR}:/${MEDIA_DIR} # Mount the media directory to save file into client service
+    env_file: .env
+    environment:
+      - PYTHONPATH=/server
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - DATABASE_TEST_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${TEST_DB}
+#    command: "alembic upgrade head"
+    depends_on:
+      # https://docs.docker.com/compose/how-tos/startup-order/
+      db:
+        condition: service_healthy
+        restart: true
+    networks:
+       - server_postgres_client
+
+  db:
+    image: postgres:latest
+    container_name: db
+    restart: on-failure
+    shm_size: 128mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      # https://www.postgresql.org/docs/current/app-pg-isready.html
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - TEST_DB=${TEST_DB}
+#      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./scripts/custom-init.sh:/docker-entrypoint-initdb.d/custom-init.sh    # skript to create test db
+      - ./db/:/var/lib/postgresql/data
+#      - ./logs/db:/var/log/postgresql
+#    command: >
+#      postgres -c max_connections=1000
+#               -c log_destination=stderr
+#               -c logging_collector=on
+#               -c log_directory=/var/log/postgresql
+#    deploy:
+#      replicas: 2
+    networks:
+      - server_postgres_client
+
+  rabbitmq:
+    image: rabbitmq:4.0.5-management-alpine
+    hostname: rabbitmq
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_USER: "guest"
+    volumes:
+      - ./rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - server_postgres_client
+
+
+networks:
+  server_postgres_client:
+    driver: bridge
+
+#volumes:
+#  media: {}
+#  rabbitmq-data: {}

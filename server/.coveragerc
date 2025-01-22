@@ -1,0 +1,23 @@
+[run]
+source = server
+# omit - исключить из coverage
+omit =
+    /server/tests/*
+    /server/migrations/*
+    /server/tests/*
+    **/__init__.py
+    /server/database.py
+    /server/logger_config.py
+    /server/schemas.py
+    /server/models.py
+    /server/services/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self\.debug
+    raise NotImplementedError
+    if not user
+    raise HTTPException
+    if __name__ == "__main__"

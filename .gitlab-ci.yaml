@@ -1,0 +1,87 @@
+workflow:
+#  Запуска pipeline в двух случаях: при создании Merge Request и при пуше в ветку main.
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+      when: always
+
+#variables:
+#  TEST_DATABASE_URL: "postgresql+asyncpg://admin:admin@db:5432/test_twitter_db"
+
+stages:
+  - code condition
+  - test
+
+default:
+  image: python:3.10.6
+  tags:
+    - python_advanced_diploma
+  before_script:
+    - apt-get update; apt-get install gettext git -y; rm -rf /var/lib/apt/lists/*
+    - pip install poetry
+    - poetry --version
+    - poetry config virtualenvs.in-project true
+    - poetry install -vv
+
+flake8:
+  stage: code condition
+  script:
+    - poetry run flake8 ./
+
+#mypy:
+#  stage: code condition
+#  script:
+#    - mypy flask_app/
+
+black:
+  stage: code condition
+  script:
+    - poetry run black --diff --check ./
+
+isort:
+  stage: code condition
+  script:
+    - poetry run isort --check-only --profile black ./
+
+#services:
+#  - name: postgres:latest
+#    alias: db
+
+test:
+  stage: test
+  image: docker:20.10.16
+  services:
+    - name: docker:20.10.16-dind
+      alias: docker
+    - name: postgres:latest
+      alias: db
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    TEST_DATABASE_URL: "postgresql+asyncpg://admin:admin@db:5432/test_twitter_db"
+  before_script:
+    - docker info
+    - apt-get update && apt-get install -y docker-compose; rm -rf /var/lib/apt/lists/*
+#    - echo "DATABASE_URL = $TEST_DATABASE_URL" >> .env
+    - echo "DATABASE_URL = $TEST_DATABASE_URL"
+#  script:
+#    # Собираем образы
+#    - docker-compose build
+#    # Поднимаем сервис db
+#    - docker-compose up -d db
+#    - docker-compose run --rm server pytest tests/ -v
+#    # Останавливаем и удаляем контейнеры
+#    - docker-compose down
+
+  script:
+      # Собираем образы
+      - docker-compose build
+      # Поднимаем сервисы
+      - docker-compose up -d
+      # Ждём, пока база данных станет доступна
+#      - ./wait-for-it.sh db:5432 --timeout=30 --strict -- echo "Postgres is up"
+      # Запускаем тесты внутри контейнера server
+      - docker-compose exec server pytest tests/ -v
+      # Останавливаем и удаляем контейнеры
+      - docker-compose down
