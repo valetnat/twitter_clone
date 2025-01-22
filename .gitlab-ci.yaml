@@ -29,10 +29,10 @@ flake8:
   script:
     - poetry run flake8 ./
 
-#mypy:
-#  stage: code condition
-#  script:
-#    - mypy flask_app/
+mypy:
+  stage: code condition
+  script:
+    - mypy flask_app/
 
 black:
   stage: code condition
@@ -44,9 +44,6 @@ isort:
   script:
     - poetry run isort --check-only --profile black ./
 
-#services:
-#  - name: postgres:latest
-#    alias: db
 
 test:
   stage: test
@@ -63,16 +60,7 @@ test:
   before_script:
     - docker info
     - apt-get update && apt-get install -y docker-compose; rm -rf /var/lib/apt/lists/*
-#    - echo "DATABASE_URL = $TEST_DATABASE_URL" >> .env
     - echo "DATABASE_URL = $TEST_DATABASE_URL"
-#  script:
-#    # Собираем образы
-#    - docker-compose build
-#    # Поднимаем сервис db
-#    - docker-compose up -d db
-#    - docker-compose run --rm server pytest tests/ -v
-#    # Останавливаем и удаляем контейнеры
-#    - docker-compose down
 
   script:
       # Собираем образы

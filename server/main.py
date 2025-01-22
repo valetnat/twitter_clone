@@ -36,16 +36,10 @@ from schemas import (
 from services.service import AttachmentDAO, FollowerDAO, LikeDAO, TweetDAO, UserDAO
 from services.utils import FileHandleService, get_user_response_data
 
-# from sqlalchemy.ext.asyncio import AsyncSession
-# from services.base import Base
 
 logging.config.dictConfig(dict_config)
 logger = get_logger("app_logger")
 
-# import logging_tree
-# logging_tree.printout()
-# print(logging_tree.tree())
-# Dependency for API Key Header
 api_key_header = APIKeyHeader(name="Api-Key", auto_error=False)
 
 
@@ -79,20 +73,7 @@ MEDIA_DIR = BASE_DIR / os.getenv("MEDIA_DIR")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # try:
-    #     media_dir = BASE_DIR / os.getenv("MEDIA_DIR")
-    #     media_dir.mkdir(parents=True, exist_ok=False)
-    #
-    #     logger.debug(f"Folder {media_dir} created at startup")
-    # except FileExistsError:
-    #     logger.debug(f"The {media_dir} folder already exists and is not created on startup")
-
-    # https://fastapi.tiangolo.com/advanced/events/#alternative-events-deprecated
-    # Startup logic: Drop and create all tables at startup
-    # async with engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.drop_all)
-    #     await conn.run_sync(Base.metadata.create_all)
-    logger.warning("Ms tyt")
+    logger.warning("Start up")
 
     async with AsyncSession() as session:
         async with session.begin():
@@ -109,9 +90,6 @@ async def lifespan(app: FastAPI):
     async with AsyncSession() as session:
         async with session.begin():
             await session.execute(delete(User))
-            # await session.commit()
-
-    #     # Shutdown logic: Dispose of the engine
     await engine.dispose()
 
 
@@ -127,40 +105,13 @@ async def add_headers_middleware(request: Request, call_next):
     logger.info(
         f"{request.method} {request.url.path} completed in {process_time:.4f}s with status {response.status_code}"
     )
-
-    # data = {
-    #     "api-key": request.headers.get('Api-key'),
-    #     "status_code": response.status_code,
-    #     "method": request.method,
-    #     "time": round(process_time, 3)
-    # }
-    #
-    # logger.info(f"Finished handling service: {request.url.path}, data={data}")
-
     return response
-
-
-# @app.middleware("http")
-# async def check_user_auth_middleware(request: Request, call_next):
-#     if request.url.path.startswith("/api"):
-#         api_key = request.headers.get("Api-Key")
-#         async with AsyncSession() as session:
-#             result = await session.execute(select(User).filter(User.api_key == api_key))
-#             user = result.scalar()
-#             if not user:
-#                 raise HTTPException(status_code=401, detail=dict(result="false", error_type="401",
-# error_message="Unauthorized user"))
-#                 return JSONResponse({"return": False, "error": "Unauthorized user"}, 401)
-#         response = await call_next(request)
-#         # response.headers["X_User_Authorization"] = f"Basic {User.id}"
-#     return response
 
 
 @app.get(
     "/api/users/me",
     response_model=UserGetResponse,
     responses={
-        # 200: {"model": UserGetResponse},
         500: {"model": ErrorResponse}
     },
     summary="Retrieve a user's information by user ID.",
@@ -219,9 +170,6 @@ async def get_all_tweets(session: SessionDep):
             "content": tweet.content,
             "author": {"id": tweet.user_id, "name": tweet.user.name},
         }
-        # likes = [{"user_id": user_like.user_id, "name": user.user_id} for user_like in tweet.liked_by] or None
-        # if likes:
-        #     tweet_dict["likes"] = likes
         likes = []
         for user_like in tweet.liked_by:
             user = await UserDAO.find_one_or_none_lazy(session=session, filters={"id": user_like.user_id}, options=[])

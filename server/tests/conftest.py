@@ -17,18 +17,9 @@ from models import User
 from ..logger_config import get_logger
 from ..main import app as _app
 
-# from ..services.service import UserDAO
 
 logger = get_logger("app_logger")
 
-
-print(os.environ)
-print(os.getenv("TEST_DATABASE_URL"))
-print(sys.path)
-# use plugins putest-env which update env for test
-
-# if use pytest-env which has your own TEST_DATABASE_URL
-# test_db_url = os.getenv("TEST_DATABASE_URL")
 test_db_url = os.getenv("DATABASE_TEST_URL")
 
 engine = create_async_engine(test_db_url, isolation_level="READ COMMITTED", echo=False)

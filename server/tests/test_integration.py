@@ -11,7 +11,6 @@ logger = get_logger("app_logger")
 
 @pytest.mark.asyncio
 async def test_get_users_me(async_client_with_api_header: AsyncClient):
-    # response = await async_client.get("/api/users/me", headers={"Api-key": "test"})
     response = await async_client_with_api_header.get("/api/users/me")
     assert response.status_code == 200
 
@@ -25,7 +24,6 @@ async def test_get_users_count(async_client_with_api_header: AsyncClient, db_ses
 
 @pytest.mark.asyncio
 async def test_get_all_tweets(async_client_with_api_header: AsyncClient):
-    # response = await async_client.get("/api/users/me", headers={"Api-key": "test"})
     response = await async_client_with_api_header.get("/api/tweets")
     assert response.status_code == 200
 
@@ -98,25 +96,6 @@ async def test_follow_user_success(async_client_with_api_header: AsyncClient, db
     assert follower.scalars().first() is not None
 
 
-# @pytest.mark.asyncio
-# async def test_follow_user_self_follow(async_client_with_api_header: AsyncClient):
-#     response = await async_client_with_api_header.post("/api/users/1/follow")
-#     # assert response.status_code == 400
-#     data = response.json()
-#     assert data["result"] is False
-
-
-# @pytest.mark.asyncio
-# async def test_follow_user_not_found(async_client_with_api_header: AsyncClient):
-#     response = await async_client_with_api_header.post("/api/users/9999/follow")
-#     # assert response.status_code == 404
-#     data = response.json()
-#     logger.error(response)
-#     # assert data["result"] is False
-#     # assert data["error_type"] == "HTTPException"
-#     # assert data["error_message"] == "User to follow not found"
-
-
 @pytest.mark.asyncio
 async def test_unfollow_user_success(async_client_with_api_header: AsyncClient, db_session):
     # User 1 is following User 2
@@ -131,16 +110,6 @@ async def test_unfollow_user_success(async_client_with_api_header: AsyncClient, 
     # Verify the follower relationship is removed
     follower = await db_session.execute(select(Follower).where(Follower.user_id == 1, Follower.followed_user_id == 2))
     assert follower.scalars().first() is None
-
-
-# @pytest.mark.asyncio
-# async def test_unfollow_user_not_following(async_client_with_api_header: AsyncClient, db_session):
-#     response = await async_client_with_api_header.delete("/api/users/3/follow")
-#     # Depending on DAO implementation, it might return 200 even if not following
-#     # Adjust the assertion based on actual behavior
-#     # assert response.status_code == 200
-#     data = response.json()
-#     assert data["result"] is True
 
 
 @pytest.mark.asyncio
@@ -255,34 +224,6 @@ async def test_delete_tweet_success(async_client_with_api_header: AsyncClient, d
     assert tweet.scalars().first() is None
 
 
-# @pytest.mark.asyncio
-# async def test_delete_tweet_not_found(async_client_with_api_header: AsyncClient):
-#     response = await async_client_with_api_header.delete("/api/tweets/9999")
-#     assert response.status_code == 404
-#     data = response.json()
-#     assert data["result"] is False
-#     assert data["error_type"] == "HTTPException"
-#     assert data["error_message"] == "Tweet not found or not authorized to delete"
-
-
-# @pytest.mark.asyncio
-# async def test_delete_tweet_unauthorized(async_client_with_api_header: AsyncClient, db_session):
-#     # Create a tweet owned by another user
-#     result = await db_session.execute(insert(User).values(name="other", api_key="otherkey").returning(Tweet))
-#     other_user = result.scalar_one()
-#
-#     result = await db_session.execute(insert(Tweet).values(content="Other User tweet",
-#     user_id=other_user.id).returning(Tweet))
-#     tweet = result.scalar_one()
-#
-#     response = await async_client_with_api_header.delete(f"/api/tweets/{str(tweet.id)}")
-#     assert response.status_code == 404
-#     data = response.json()
-#     assert data["result"] is False
-#     assert data["error_type"] == "HTTPException"
-#     assert data["error_message"] == "Tweet not found or not authorized to delete"
-
-
 @pytest.mark.asyncio
 async def test_like_tweet_success(async_client_with_api_header: AsyncClient, db_session):
     # Create a tweet to like
@@ -297,31 +238,6 @@ async def test_like_tweet_success(async_client_with_api_header: AsyncClient, db_
     # Verify the like in the database
     like = await db_session.execute(select(Like).where(Like.tweet_id == tweet.id, Like.user_id == 1))
     assert like.scalars().first() is not None
-
-
-# @pytest.mark.asyncio
-# async def test_like_tweet_already_liked(async_client_with_api_header: AsyncClient, db_session):
-#     # Create a tweet to like
-#     result = await db_session.execute(insert(Tweet).values(content="Tweet to like", user_id=1).returning(Tweet))
-#     tweet = result.scalar_one()
-#
-#     # Add a like
-#     result = await db_session.execute(insert(Like).values(user_id=1, tweet_id=tweet.id).returning(Like))
-#     like = result.scalar_one()
-#
-#     # Attempt to like again (assuming UniqueConstraint prevents duplicates)
-#     response = await async_client_with_api_header.post(f"/api/tweets/{tweet.id}/likes")
-#     assert response.status_code == 500  # Or appropriate status based on DAO implementation
-
-
-# @pytest.mark.asyncio
-# async def test_like_tweet_not_found(async_client_with_api_header: AsyncClient):
-#     response = await async_client_with_api_header.post("/api/tweets/9999/likes")
-#     assert response.status_code == 404
-#     data = response.json()
-#     assert data["result"] is False
-#     assert data["error_type"] == "HTTPException"
-#     assert data["error_message"] == "Tweet not found"
 
 
 @pytest.mark.asyncio
@@ -343,27 +259,3 @@ async def test_unlike_tweet_success(async_client_with_api_header: AsyncClient, d
     like = await db_session.execute(select(Like).where(Like.tweet_id == tweet.id, Like.user_id == 1))
     assert like.scalars().first() is None
 
-
-# @pytest.mark.asyncio
-# async def test_unlike_tweet_not_liked(async_client_with_api_header: AsyncClient, db_session):
-#     # Create a tweet
-#     tweet = Tweet(content="Tweet not liked yet", user_id=1)
-#     db_session.add(tweet)
-#     await db_session.commit()
-#
-#     # Attempt to unlike without a prior like
-#     response = await async_client_with_api_header.delete(f"/api/tweets/{tweet.id}/likes")
-#     # Depending on DAO implementation, it might return 200 even if not liked
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["result"] is True
-
-
-# @pytest.mark.asyncio
-# async def test_unlike_tweet_not_found(async_client_with_api_header: AsyncClient):
-#     response = await async_client_with_api_header.delete("/api/tweets/9999/likes")
-#     assert response.status_code == 404
-#     data = response.json()
-#     assert data["result"] is False
-#     assert data["error_type"] == "HTTPException"
-#     assert data["error_message"] == "Tweet not found"

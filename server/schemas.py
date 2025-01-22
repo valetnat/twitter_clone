@@ -17,9 +17,6 @@ class BaseUser(Base):
 
     Config: ConfigDict = {"orm_model": True}
 
-    # class Config:
-    #     orm_model = True
-
 
 class UserPydantic(BaseModel):
     id: int
@@ -34,9 +31,6 @@ class LikeBase(Base):
 
     Config: ConfigDict = {"orm_model": True}
 
-    # class Config:
-    #     orm_model = True
-
 
 # -------------------------------------Follower--------------------------------------- #
 class FollowerBase(Base):
@@ -45,9 +39,6 @@ class FollowerBase(Base):
     followed_user_id: int
 
     Config: ConfigDict = {"orm_model": True}
-
-    # class Config:
-    #     orm_model = True
 
 
 # -------------------------------------TWEET--------------------------------------- #
@@ -58,16 +49,11 @@ class BaseTweet(Base):
     user_id: int
     attachments: List[int] | None
 
-    # class Config:
-    #     orm_model = True
-    #     from_attributes = True
-
     Config: ConfigDict = {"orm_model": True, "from_attributes": True}
 
 
 class TweetPayloadIn(BaseModel):
     content: str = Field(..., alias="tweet_data")
-    # attachments: Optional[List[int]] = Field(default=[], alias="tweet_media_ids")
     attachments: Union[List[int], List] = Field(None, alias="tweet_media_ids")
 
 
@@ -81,8 +67,6 @@ class AttachmentBase(Base):
     id: int
     path: str
 
-    # class Config:
-    #     orm_model = True
     Config: ConfigDict = {"orm_model": True}
 
 

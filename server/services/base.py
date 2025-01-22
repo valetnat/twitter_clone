@@ -82,12 +82,3 @@ class BaseDAO(Generic[T]):
             return record
         except SQLAlchemyError as e:
             raise e
-
-
-# class GetUser:
-#     user_model = User
-#
-#     @classmethod
-#     async def _get_user_by_id(cls, session: AsyncSession, api_key: str):
-#         user = await session.scalar(select(cls.user_model).filter(cls.user_model.api_key == api_key))
-#         return user
